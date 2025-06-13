@@ -1,0 +1,55 @@
+{% extends "attendance_app/admin/base.html" %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="dashboard-cards">
+            <div class="card">
+                <div class="card-title">Today's Logs</div>
+                <div class="card-value">{{ today_logs_count }}</div>
+            </div>
+            <div class="card">
+                <div class="card-title">Total Students</div>
+                <div class="card-value">{{ total_students }}</div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Recent Logins</h5>
+            </div>
+            <div class="card-body">
+                {% if recent_logins %}
+                <div class="recent-logins">
+                    {% for login in recent_logins %}
+                    <div class="student-card">
+                        <img src="{{ login.student.photo.url }}" alt="{{ login.student.full_name }}" class="student-photo">
+                        <div class="student-info">
+                            <div class="student-name">{{ login.student.full_name }}</div>
+                            <div class="student-time">
+                                {% if login.time_in %}
+                                IN: {{ login.time_in|time:"h:i A" }}
+                                {% endif %}
+                                {% if login.time_out %}
+                                OUT: {{ login.time_out|time:"h:i A" }}
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p>No recent logins found.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

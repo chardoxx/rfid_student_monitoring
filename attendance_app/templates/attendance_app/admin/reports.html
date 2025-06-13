@@ -1,0 +1,191 @@
+{% extends "attendance_app/admin/base.html" %}
+{% load static %}
+
+{% block page_title %}Attendance Reports{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'attendance_app/css/charts.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>Filters</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="start_date" class="form-label">Start Date</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" 
+                               value="{{ request.GET.start_date }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="end_date" class="form-label">End Date</label>
+                        <input type="date" class="form-control" id="end_date" name="end_date" 
+                               value="{{ request.GET.end_date }}">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="section" class="form-label">Section</label>
+                        <select class="form-select" id="section" name="section">
+                            <option value="">All Sections</option>
+                            {% for section in all_sections %}
+                            <option value="{{ section.id }}" {% if request.GET.section == section.id|stringformat:"s" %}selected{% endif %}>
+                                {{ section.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-filter"></i> Apply Filters
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="chart-container">
+            <div class="chart-header">
+                <h5 class="chart-title">Attendance Summary</h5>
+                <div class="chart-controls">
+                    <button class="chart-control" data-range="week">Week</button>
+                    <button class="chart-control active" data-range="month">Month</button>
+                    <button class="chart-control" data-range="year">Year</button>
+                </div>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="attendancePieChart"></canvas>
+                <div id="chart-loading" style="display: none; text-align: center; padding: 50px;">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p>Loading chart data...</p>
+                </div>
+            </div>
+            <div class="pie-legend"></div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="chart-container">
+            <div class="chart-header">
+                <h5 class="chart-title">Daily Attendance</h5>
+            </div>
+            <div class="chart-wrapper">
+                <canvas id="dailyAttendanceChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>Attendance Records</h5>
+                <button id="export-btn" class="btn btn-success">
+                    <i class="fas fa-file-excel"></i> Export to Excel
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Photo</th>
+                                <th>Student Name</th>
+                                <th>Section</th>
+                                <th>Time In</th>
+                                <th>Time Out</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for record in attendance_records %}
+                            <tr>
+                                <td>{{ record.date|date:"M d, Y" }}</td>
+                                <td class="photo-cell">
+                                    {% if record.student.photo %}
+                                    <img src="{{ record.student.photo.url }}" alt="{{ record.student.full_name }}" 
+                                         style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+                                    {% else %}
+                                    <img src="{% static 'attendance_app/img/placeholder.jpg' %}" alt="No photo" 
+                                         style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px;">
+                                    {% endif %}
+                                </td>
+                                <td>{{ record.student.full_name }}</td>
+                                <td>{{ record.student.section.name }}</td>
+                                <td>{{ record.time_in|time:"h:i A"|default:"-" }}</td>
+                                <td>{{ record.time_out|time:"h:i A"|default:"-" }}</td>
+                                <td>
+                                    {% if record.status == 'present' %}
+                                    <span class="badge bg-success">Present</span>
+                                    {% elif record.status == 'late' %}
+                                    <span class="badge bg-warning text-dark">Late</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Absent</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center">No attendance records found for the selected filters.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Pagination -->
+                {% if attendance_records.has_other_pages %}
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center mt-3">
+                        {% if attendance_records.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.section %}&section={{ request.GET.section }}{% endif %}">&laquo; First</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ attendance_records.previous_page_number }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.section %}&section={{ request.GET.section }}{% endif %}">Previous</a>
+                        </li>
+                        {% endif %}
+                        
+                        {% for num in attendance_records.paginator.page_range %}
+                            {% if attendance_records.number == num %}
+                            <li class="page-item active"><a class="page-link" href="#">{{ num }}</a></li>
+                            {% elif num > attendance_records.number|add:'-3' and num < attendance_records.number|add:'3' %}
+                            <li class="page-item"><a class="page-link" href="?page={{ num }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.section %}&section={{ request.GET.section }}{% endif %}">{{ num }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if attendance_records.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ attendance_records.next_page_number }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.section %}&section={{ request.GET.section }}{% endif %}">Next</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ attendance_records.paginator.num_pages }}{% if request.GET.start_date %}&start_date={{ request.GET.start_date }}{% endif %}{% if request.GET.end_date %}&end_date={{ request.GET.end_date }}{% endif %}{% if request.GET.section %}&section={{ request.GET.section }}{% endif %}">Last &raquo;</a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- SheetJS for Excel Export -->
+<script src="{% static 'attendance_app/js/vendor/xlsx/xlsx.full.min.js' %}"></script>
+<!-- Custom Chart and Export Scripts -->
+<script src="{% static 'attendance_app/js/charts.js' %}"></script>
+<script src="{% static 'attendance_app/js/excel_export.js' %}"></script>
+{% endblock %}
+{% endblock %}

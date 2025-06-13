@@ -1,0 +1,125 @@
+{% extends "attendance_app/admin/base.html" %}
+
+{% block page_title %}Email Notification Setup{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h5>Email Notification Templates</h5>
+    </div>
+    <div class="card-body">
+        <form method="post" action="{% url 'update_email_settings' %}">
+            {% csrf_token %}
+            
+            <div class="mb-4">
+                <h6>Time-In Notification</h6>
+                <div class="mb-3">
+                    <label for="time_in_subject" class="form-label">Subject</label>
+                    <input type="text" class="form-control" id="time_in_subject" name="time_in_subject" 
+                           value="{{ email_settings.time_in_subject }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="time_in_template" class="form-label">Message Template</label>
+                    <textarea class="form-control" id="time_in_template" name="time_in_template" 
+                              rows="5" required>{{ email_settings.time_in_template }}</textarea>
+                    <div class="form-text">
+                        Available variables: {student_name}, {time_in}, {date}, {section}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <h6>Time-Out Notification</h6>
+                <div class="mb-3">
+                    <label for="time_out_subject" class="form-label">Subject</label>
+                    <input type="text" class="form-control" id="time_out_subject" name="time_out_subject" 
+                           value="{{ email_settings.time_out_subject }}" required>
+                </div>
+                <div class="mb-3">
+                    <label for="time_out_template" class="form-label">Message Template</label>
+                    <textarea class="form-control" id="time_out_template" name="time_out_template" 
+                              rows="5" required>{{ email_settings.time_out_template }}</textarea>
+                    <div class="form-text">
+                        Available variables: {student_name}, {time_out}, {date}, {section}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <h6>SMTP Settings</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="smtp_host" class="form-label">SMTP Host</label>
+                        <input type="text" class="form-control" id="smtp_host" name="smtp_host" 
+                               value="{{ email_settings.smtp_host }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="smtp_port" class="form-label">SMTP Port</label>
+                        <input type="number" class="form-control" id="smtp_port" name="smtp_port" 
+                               value="{{ email_settings.smtp_port }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="smtp_username" class="form-label">SMTP Username</label>
+                        <input type="text" class="form-control" id="smtp_username" name="smtp_username" 
+                               value="{{ email_settings.smtp_username }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="smtp_password" class="form-label">SMTP Password</label>
+                        <input type="password" class="form-control" id="smtp_password" name="smtp_password" 
+                               value="{{ email_settings.smtp_password }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="from_email" class="form-label">From Email</label>
+                        <input type="email" class="form-control" id="from_email" name="from_email" 
+                               value="{{ email_settings.from_email }}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="from_name" class="form-label">From Name</label>
+                        <input type="text" class="form-control" id="from_name" name="from_name" 
+                               value="{{ email_settings.from_name }}" required>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#testEmailModal">
+                    <i class="fas fa-paper-plane"></i> Send Test Email
+                </button>
+                <button type="submit" class="btn btn-primary">Save Settings</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Test Email Modal -->
+<div class="modal fade" id="testEmailModal" tabindex="-1" aria-labelledby="testEmailModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="testEmailModalLabel">Send Test Email</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'send_test_email' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="test_email" class="form-label">Recipient Email</label>
+                        <input type="email" class="form-control" id="test_email" name="test_email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="test_type" class="form-label">Email Type</label>
+                        <select class="form-select" id="test_type" name="test_type" required>
+                            <option value="time_in">Time-In Notification</option>
+                            <option value="time_out">Time-Out Notification</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary">Send Test Email</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

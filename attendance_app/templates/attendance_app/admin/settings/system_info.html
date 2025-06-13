@@ -1,0 +1,123 @@
+{% extends "attendance_app/admin/base.html" %}
+
+{% block page_title %}System Information{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>System Configuration</h5>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'update_system_info' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="system_title" class="form-label">System Title</label>
+                        <input type="text" class="form-control" id="system_title" name="system_title" 
+                               value="{{ system_info.system_title }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="footer_text" class="form-label">Footer Text</label>
+                        <input type="text" class="form-control" id="footer_text" name="footer_text" 
+                               value="{{ system_info.footer_text }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="logo" class="form-label">System Logo</label>
+                        <input type="file" class="form-control" id="logo" name="logo" accept="image/*">
+                        {% if system_info.logo %}
+                        <div class="mt-2">
+                            <img src="{{ system_info.logo.url }}" alt="Current Logo" style="max-height: 50px;">
+                        </div>
+                        {% endif %}
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update System Info</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>System Status</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6>Database Status</h6>
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> Connected successfully
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <h6>RFID Hardware</h6>
+                    {% if hardware_status.rfid_connected %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> RFID Reader connected ({{ hardware_status.rfid_model }})
+                    </div>
+                    {% else %}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i> RFID Reader not connected
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <h6>Camera Status</h6>
+                    {% if hardware_status.camera_connected %}
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle"></i> Camera connected ({{ hardware_status.camera_model }})
+                    </div>
+                    {% else %}
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle"></i> Camera not connected
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <h6>System Version</h6>
+                    <p>{{ system_info.version }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h5>System Logs</h5>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Type</th>
+                        <th>Message</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in system_logs %}
+                    <tr>
+                        <td>{{ log.timestamp|date:"M d, Y H:i:s" }}</td>
+                        <td>
+                            {% if log.log_type == 'error' %}
+                            <span class="badge bg-danger">Error</span>
+                            {% elif log.log_type == 'warning' %}
+                            <span class="badge bg-warning text-dark">Warning</span>
+                            {% else %}
+                            <span class="badge bg-info">Info</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ log.message }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" class="text-center">No logs found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
